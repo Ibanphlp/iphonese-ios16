@@ -25,9 +25,10 @@ And no, this is not for iPhone 5S.
 # What does not work
 
 - Device Audio (Audio on Bluetooth works)
-- Other things I have not tested.
+- App Store downloads
+- Other things I have not tested. They may have issues.
 
-This is an incomplete project, and still has issues. Do not try this on a main device.
+This is an incomplete project, and still has issues. Do not try this on a main device. Proof Of Concept.
 
 # System Requirements
 

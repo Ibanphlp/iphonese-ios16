@@ -23,6 +23,14 @@ Common sense
 
 Place these inside the downloaded repo.
 
+# Usage
+
+Assuming all IPSWs are present, here is the usage!
+
+`chmod +x build-ipsw.sh`
+
+`./build-ipsw.sh`
+
 # What works
 
 - Baseband (cellular functionality is NOT fully tested, as my SE 1 is carrier locked to AT&T)

@@ -7,7 +7,7 @@ This creates a custom iOS 16 restore IPSW for iPhone SE 1st generation for tethe
 
 # Requirements
 
-A Mac/Hacktintosh on a modern macOS version (preferably, macOS 14 and up).
+A Mac/Hackintosh on a modern macOS version (preferably, macOS 14 and up).
 
 At least 40-50GB of free space.
 

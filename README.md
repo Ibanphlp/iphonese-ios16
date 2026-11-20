@@ -5,6 +5,14 @@ And no, this is not for iPhone 5S.
 
 This creates a custom iOS 16 restore IPSW for iPhone SE 1st generation for tether upgrading unofficially.
 
+# Requirements
+
+A Mac/Hacktintosh on a modern macOS version (preferably, macOS 14 and up).
+
+At least 40-50GB of free space.
+
+Common sense
+
 # IPSWs needed
 
 [iPhone SE 15.8.8 IPSW](https://updates.cdn-apple.com/2025FallFCS/fullrestores/122-77321/C113B49D-5014-4DEA-9C43-9AA3D772355B/iPhone_4.0_64bit_15.8.8_19H422_Restore.ipsw)

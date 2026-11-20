@@ -22,13 +22,14 @@ Place these inside the downloaded repo.
 - Bluetooth
 - Wi-Fi
 - Apple services
-- SEP (mostly)
+- SEP
 - Touch ID
 
 # What does not work
 
 - Device Audio (Audio on Bluetooth works)
 - Camera
+- Wallpaper
 - Other things I have not tested. They may have issues.
 
 This is an incomplete project, and still has issues. Do not try this on a main device. Proof Of Concept.

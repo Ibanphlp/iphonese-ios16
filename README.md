@@ -30,10 +30,4 @@ And no, this is not for iPhone 5S.
 
 This is an incomplete project, and still has issues. Do not try this on a main device. Proof Of Concept.
 
-# System Requirements
-
-macOS 15 and later, an Intel or Apple Silicon Mac (only tested on M4 MacBook Air, macOS 15.7.5) at the moment.
-
-At least 30-40GB free storage.
-
-Linux support is not planned. And don't even ask for Windows support, it won't be coming ever.
+Integrated into surrealra1n.

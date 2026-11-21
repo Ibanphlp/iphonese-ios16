@@ -41,6 +41,7 @@ setup_tools() (
     download_tool img4 https://github.com/LukeZGD/Legacy-iOS-Kit/raw/refs/heads/main/bin/macos/img4
     download_tool ldid "https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_macosx_$arch"
     download_tool Kernel64Patcher https://github.com/edwin170/downr1n/raw/refs/heads/main/binaries/Darwin/Kernel64Patcher
+    download_tool KPlooshFinder https://github.com/LukeZGD/Legacy-iOS-Kit/raw/refs/heads/main/bin/macos/KPlooshFinder
 
     if [[ ! -x bin/kerneldiff2 ]]; then
         curl -fL --retry 3 -o "$scratch/kerneldiff.c" https://gist.githubusercontent.com/pwnerblu/46021f9d633d579bf9e950f66679e37c/raw/93fc81591cfb4b04b5fab13144f68d877a42769d/kerneldiff.c
@@ -137,8 +138,11 @@ hdiutil attach tmp3/078-64825-107.dmg -mountpoint cryptexApp
 ./bin/kextport work/kernel.patch work/kernel-SE.raw work/kernel.patch2
 ./bin/mthax work/kernel.patch2 work/kernel.patch3
 ./bin/Kernel64Patcher work/kernel.patch3 work/kernel.patch4 -e -h
+./bin/KPlooshFinder work/kernel.patch4 work/kernel.patch5
 ./bin/kerneldiff2 work/kernel.raw work/kernel.patch4 work/kernel.diff
+./bin/kerneldiff2 work/kernel.raw work/kernel.patch5 work/kernel.diff2
 ./bin/img4 -i tmp3/kernelcache.release.ipad6f -o tmp1/kernelcache.release.iphone8b -T krnl -P work/kernel.diff
+./bin/img4 -i tmp3/kernelcache.release.ipad6f -o tmp1/kernelcache.release.iphone8c -T krnl -P work/kernel.diff2
 # Done with that. Can now prep Cryptex
 sudo rm -rf rootfs16/System/Cryptexes/OS
 sudo rm -rf rootfs16/System/Cryptexes/App
@@ -204,6 +208,8 @@ rm -rf tmp3
 rm -rf work
 sudo plutil -replace ProductBuildVersion -string 20B82 tmp1/BuildManifest.plist
 sudo plutil -replace ProductVersion -string 16.1 tmp1/BuildManifest.plist
+sudo plutil -replace BuildIdentities.0.Manifest.KernelCache.Info.Path -string kernelcache.release.iphone8c tmp1/BuildManifest.plist
+sudo plutil -replace BuildIdentities.1.Manifest.KernelCache.Info.Path -string kernelcache.release.iphone8c tmp1/BuildManifest.plist
 cd tmp1 
 zip -0 -r ../iPhone_4.0_64bit_16.1_20B82_Restore.ipsw *
 cd ..

@@ -45,6 +45,7 @@ Assuming all IPSWs are present, here is the usage!
 
 - Device Audio (Audio on Bluetooth works)
 - Camera
+- Jailbreaking
 - Wallpaper
 - Other things I have not tested. They may have issues.
 

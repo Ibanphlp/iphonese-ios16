@@ -36,6 +36,21 @@ def sha256(path):
     return h.hexdigest()
 
 
+def macho_sha256(path):
+    import struct
+    with open(path, 'rb') as f:
+        data = f.read()
+    ncmds = struct.unpack_from('<I', data, 16)[0]
+    off, end = 32, 0
+    for _ in range(ncmds):
+        cmd, size = struct.unpack_from('<II', data, off)
+        if cmd == 0x19:
+            fileoff, filesize = struct.unpack_from('<QQ', data, off + 40)
+            end = max(end, fileoff + filesize)
+        off += size
+    return hashlib.sha256(data[:end]).hexdigest()
+
+
 def main(argv):
     if len(argv) < 4:
         sys.stderr.write(__doc__)
@@ -48,7 +63,10 @@ def main(argv):
     only = argv[argv.index('--only') + 1] if '--only' in argv else None
     amp_abi = None if only == 'cs42l71' else load_json(profiles / 'se-cs35l19-abi.json')
     expected = abi['source_kernels']
-    require(sha256(donor) == expected['donor_sha256'],
+    # img4 (macOS build) drops data trailing the Mach-O that pyimg4 keeps, so
+    # also accept a hash of the Mach-O extent only.
+    require(sha256(donor) == expected['donor_sha256'] or
+            macho_sha256(donor) == expected['donor_macho_sha256'],
             'Donor kernel does not match the profiled SE 15.8.8 kernel')
     if sha256(dst) != expected['target_sha256']:
         # The profiled target is the pre-kextport ipad6f kernel; the pipeline

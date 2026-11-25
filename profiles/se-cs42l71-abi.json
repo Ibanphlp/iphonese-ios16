@@ -8,7 +8,8 @@
   "target": "/home/iban/se-inv-work/kc/ipad6f.raw",
   "target_sha256": "0a106f072b4ee608564a487ffba9a2c503ececb9531ba087854c94f1e046311b",
   "reference_donor_sha256": "d2f90b0f61362468e50be8174c7fb8c08eaf7614dc1f4c9e8ec5a8947b7ff167",
-  "reference_target_sha256": "c4a413bdf75668cec2d08e64a1d4e33113341c933994a521df86a6989fb03e7b"
+  "reference_target_sha256": "c4a413bdf75668cec2d08e64a1d4e33113341c933994a521df86a6989fb03e7b",
+  "donor_macho_sha256": "fbd1d55ffb1d11f2859ad9dedad27e992854a0822bcd410246480468aff9ec69"
  },
  "classes15": {
   "AppleARMFunction": {

@@ -1,0 +1,46 @@
+{
+ "scope": "Derivation evidence for AppleCS35L19Amp transplant (se15.8.8 -> ipad6f 16.1)",
+ "analyzer_validation": {
+  "method": "CFG fixpoint this-tracking dataflow (regs+stack slots, lattice amp/vtab/other, interprocedural x0-x7 arg propagation), applied to se15 AppleCS42L71Audio vs reviewed se-cs42l71 profile (1091 fields)",
+  "best_config": "vtable-entry x0=amp seeds + field loads propagate amp + call-arg propagation to fixpoint",
+  "result": "cand 1018, tp 702, fp 316, fn 389 (precision 69%, recall 64%)",
+  "disagreement_analysis": "fp: mostly ldst/add rows on regs tagged amp via over-eager field-load propagation (member objects are not always EmbeddedAudio-family) plus a minority of genuine SevenUP-missed stores (e.g. str x31,[x19,#592] in 0xfffffff006c18860). fn: base regs tagged other whose amp provenance travels through non-modelled paths (globals, x1+ args, sub-objects, singleton reloads). For CS35L19 (single-class kext, nearly every function is a method) recall is materially better than the CS42L71 figure suggests."
+ },
+ "slot_map": {
+  "rule": "i<180 -> i; 180<=i<=330 -> i+3; i==331 -> 180; i==332 -> 181; i>=333 -> i+1",
+  "evidence": "per-class vtable alignment (xnu-name anchors + unique normalized window signatures) on AppleEmbeddedAudio, AppleI2CMultipleAudio, AppleCSI2CMultipleAudio, AppleCSSPIAudio, AppleCSSPIv2Audio se15 vs ipad6f. Independently reproduces SevenUP slot() everywhere provable; additionally DISCOVERS that 15-slots 331/332 are not removed but moved to 16-slots 180/181 (window-sig identity, unique in each class), with one net new slot at 182.",
+  "unproven": "slots 328-330 map to 331-333 by position only (the functions are identical repeated stubs; any order among them is equivalent). slots 333-336 -> 334-337 same caveat."
+ },
+ "class_chain": "AppleCS35L19Amp(632,360 slots) -> AppleCSI2CMultipleAudio(472/480,359/360) -> AppleI2CMultipleAudio(472/480,358/359) -> AppleEmbeddedAudio(440/448,340/341) -> IOService",
+ "field_boundary": "+8 shift applies at byte offset >= 408 (same as CS42L71; parent insertion point), confirmed: every analyzer-flagged field row has off>=408 and instance-size constant 632->640",
+ "bindings": "378 pointer slots resolved: 190 XNU symbols (byname), 172 EA functions (164 vtable-slot correspondence + 8 unique window sig), 5 via existing CS42L71 bindings, 5 via CS42L81 import-table/window/full-function matching, 4 same-bundle window/full-function matches, parent metaclass + parent vtable-header by assoc-block lookup. 1 literal 0xffffffff00000001 sentinel skipped.",
+ "ambiguous_items": [
+  {
+   "donor": "0xfffffff006108424",
+   "target": "0xfffffff005e2d478",
+   "note": "mid-function pointer; enclosing function 0x6106f8c uniquely window-matched to 0x5e2b00c (all widths); +5272 delta assumed"
+  },
+  {
+   "donor": "0xfffffff006117c60",
+   "target": "0xfffffff005e3c220",
+   "note": "2-instruction getter; e29600 also matched short window but differs in load offset (b9412000 vs b9400000); e3c220 identical"
+  },
+  {
+   "donor": "0xfffffff00610deb4",
+   "target": "0xfffffff005e32538",
+   "note": "unique intersection of window-sig candidates with CS42L81 import table"
+  },
+  {
+   "donor": "0xfffffff00610ded4",
+   "target": "0xfffffff005e32558",
+   "note": "same; adjacent to e32538 as donor pair was adjacent"
+  },
+  {
+   "donor": "0xfffffff005e4f5c8",
+   "target": "0xfffffff005ced5c8",
+   "note": "full-function normalized equality (154 words)"
+  }
+ ],
+ "unresolved": [],
+ "notes": "CS35L19 kext registers exactly one class (AppleCS35L19Amp); the two other assoc-like blocks (14 and 1 slots, code-pointer first field) are ops/dispatch tables, covered by bindings. No kmod literals needed rewrite except kmod_info self-address handled by transplant machinery."
+}

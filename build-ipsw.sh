@@ -157,7 +157,7 @@ hdiutil attach tmp3/078-64825-107.dmg -mountpoint cryptexApp
 ./bin/img4 -i tmp1/kernelcache.release.iphone8b -o work/kernel-SE.raw
 ./bin/pmuhax work/kernel.raw work/kernel.patch
 ./bin/kextport work/kernel.patch work/kernel-SE.raw work/kernel.patch2
-python3 patchsrc/audioport/audioport.py work/kernel.patch2 work/kernel-SE.raw work/kernel.patch2a
+python3 patchsrc/audioport.py work/kernel.patch2 work/kernel-SE.raw work/kernel.patch2a
 ./bin/mthax work/kernel.patch2a work/kernel.patch3
 ./bin/Kernel64Patcher work/kernel.patch3 work/kernel.patch4 -e -h
 ./bin/KPlooshFinder work/kernel.patch4 work/kernel.patch5

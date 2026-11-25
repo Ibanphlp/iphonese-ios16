@@ -11,6 +11,8 @@ A Mac/Hackintosh on a modern macOS version (preferably, macOS 14 and up).
 
 At least 40-50GB of free space.
 
+`python3` (used by the audio driver port, the one shipped with macOS / Xcode Command Line Tools is fine).
+
 Common sense
 
 # IPSWs needed
@@ -37,6 +39,7 @@ Assuming all IPSWs are present, here is the usage!
 - Wallpaper (thanks to [awazustamin](https://github.com/awazustamin) for [the PR!](https://github.com/pwnerblu/iphonese-ios16/pull/2))
 - Flashlight
 - Bluetooth
+- Device audio (speaker, see "Audio driver port" below). Microphone is only partially working.
 - Wi-Fi
 - Apple services
 - SEP
@@ -44,10 +47,13 @@ Assuming all IPSWs are present, here is the usage!
 
 # What does not work
 
-- Device Audio (Audio on Bluetooth works)
 - Camera
 - Jailbreaking
 - Other things I have not tested. They may have issues.
+
+# Audio driver port
+
+The iPad 5 iOS 16.1 kernel lacks the SE's audio codec (`AppleCS42L71Audio`) and speaker amp (`AppleCS35L19Amp`) drivers. `patchsrc/audioport/` (stdlib-only Python 3) transplants both from the SE 15.8.8 kernel into the iOS 16 kernel during the build, adapting them to the iOS 16 class layouts. The CS42L71 port reuses the method and reviewed ABI data of SevenUP (iOS 16.1 port for iPhone 7, BSD-3-Clause, credit to its authors), retargeted to the SE/iPad 5 kernels. The reclaimed slots are `AppleANXDPTX` (codec) and `AppleCS42L81Audio` (amp), both unused on the SE. Pass `--only cs42l71` to `audioport.py` to build without the amp driver.
 
 This is an incomplete project, and still has issues. Do not try this on a main device. Proof Of Concept.
 

@@ -11,6 +11,8 @@ A Mac/Hackintosh on a modern macOS version (preferably, macOS 14 and up).
 
 At least 40-50GB of free space.
 
+`python3` (used by the audio driver port, the one shipped with macOS / Xcode Command Line Tools is fine).
+
 Common sense
 
 # IPSWs needed
@@ -37,6 +39,7 @@ Assuming all IPSWs are present, here is the usage!
 - Wallpaper (thanks to [awazustamin](https://github.com/awazustamin) for [the PR!](https://github.com/pwnerblu/iphonese-ios16/pull/2))
 - Flashlight
 - Bluetooth
+- Device audio (speaker)
 - Wi-Fi
 - Apple services
 - SEP
@@ -44,7 +47,6 @@ Assuming all IPSWs are present, here is the usage!
 
 # What does not work
 
-- Device Audio (Audio on Bluetooth works)
 - Camera
 - Jailbreaking
 - Other things I have not tested. They may have issues.

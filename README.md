@@ -34,6 +34,7 @@ Assuming all IPSWs are present, here is the usage!
 # What works
 
 - Baseband (cellular functionality is NOT fully tested, as my SE 1 is carrier locked to AT&T)
+- Wallpaper (thanks to [awazustamin](https://github.com/awazustamin) for [the PR!](https://github.com/pwnerblu/iphonese-ios16/pull/2))
 - Flashlight
 - Bluetooth
 - Wi-Fi
@@ -46,7 +47,6 @@ Assuming all IPSWs are present, here is the usage!
 - Device Audio (Audio on Bluetooth works)
 - Camera
 - Jailbreaking
-- Wallpaper
 - Other things I have not tested. They may have issues.
 
 This is an incomplete project, and still has issues. Do not try this on a main device. Proof Of Concept.

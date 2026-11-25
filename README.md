@@ -39,7 +39,7 @@ Assuming all IPSWs are present, here is the usage!
 - Wallpaper (thanks to [awazustamin](https://github.com/awazustamin) for [the PR!](https://github.com/pwnerblu/iphonese-ios16/pull/2))
 - Flashlight
 - Bluetooth
-- Device audio (speaker). Microphone is only partially working.
+- Device audio (speaker)
 - Wi-Fi
 - Apple services
 - SEP

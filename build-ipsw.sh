@@ -44,6 +44,7 @@ setup_tools() (
     arch=$(uname -m)
     download_tool img4 https://github.com/LukeZGD/Legacy-iOS-Kit/raw/refs/heads/main/bin/macos/img4
     download_tool ldid "https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_macosx_$arch"
+    download_tool trustcache "https://github.com/CRKatri/trustcache/releases/download/v2.0/trustcache_macos_$arch"
     download_tool Kernel64Patcher https://github.com/edwin170/downr1n/raw/refs/heads/main/binaries/Darwin/Kernel64Patcher
     download_tool KPlooshFinder https://github.com/LukeZGD/Legacy-iOS-Kit/raw/refs/heads/main/bin/macos/KPlooshFinder
 
@@ -104,6 +105,7 @@ unzip $SE_IPSW -d tmp1
 unzip $IPHONE_IPSW -d tmp2
 rm -rf tmp2/078-65022-105.dmg
 mkdir -p work
+./bin/img4 -i tmp2/Firmware/078-65562-105.dmg.trustcache -o work/trustcache.raw
 curl -L -o work/template.dmg https://github.com/pwnerblu/extra-resources-ipad1/releases/download/1.0/template.dmg
 hdiutil resize -size 11500m work/template.dmg
 hdiutil attach tmp1/098-68807-067.dmg -mountpoint rootfs15
@@ -160,11 +162,15 @@ hdiutil attach tmp3/078-64825-107.dmg -mountpoint cryptexApp
 python3 patchsrc/audioport.py work/kernel.patch2 work/kernel-SE.raw work/kernel.patch2a
 ./bin/mthax work/kernel.patch2a work/kernel.patch3
 ./bin/Kernel64Patcher work/kernel.patch3 work/kernel.patch4 -e -h
-./bin/KPlooshFinder work/kernel.patch4 work/kernel.patch5
+# KPlooshFinder was the runtime AMFI bypass for the modified shared cache.
+# We now resign the shared cache in dscpatch and register every modified /
+# newly-added CDHash in work/trustcache.raw below, so AMFI boots intact.
+# Keeping this call parked in case the trust-cache path needs a fallback.
+#./bin/KPlooshFinder work/kernel.patch4 work/kernel.patch5
 ./bin/kerneldiff2 work/kernel.raw work/kernel.patch4 work/kernel.diff
-./bin/kerneldiff2 work/kernel.raw work/kernel.patch5 work/kernel.diff2
+#./bin/kerneldiff2 work/kernel.raw work/kernel.patch5 work/kernel.diff2
 ./bin/img4 -i tmp3/kernelcache.release.ipad6f -o tmp1/kernelcache.release.iphone8b -T krnl -P work/kernel.diff
-./bin/img4 -i tmp3/kernelcache.release.ipad6f -o tmp1/kernelcache.release.iphone8c -T krnl -P work/kernel.diff2
+#./bin/img4 -i tmp3/kernelcache.release.ipad6f -o tmp1/kernelcache.release.iphone8c -T krnl -P work/kernel.diff2
 # Done with that. Can now prep Cryptex
 sudo rm -rf rootfs16/System/Cryptexes/OS
 sudo rm -rf rootfs16/System/Cryptexes/App
@@ -200,17 +206,81 @@ rm -rf tmp2
 rm -rf tmp3/078-65701-105.dmg
 rm -rf tmp3/078-64804-105.dmg
 rm -rf tmp3/078-64825-107.dmg
-# Patch DSC. Needed for multiple functionality fixes
-./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.05 work/dyld05
+# Patch DSC. Needed for multiple functionality fixes. -H writes the new
+# ad-hoc CDHash of every CodeDirectory in the subcache so we can feed them
+# straight into the trust cache below.
+./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.05 work/dyld05 -H work/dyld05.cdhash
 sudo mv -v work/dyld05 rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.05
-./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.09 work/dyld09
+./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.09 work/dyld09 -H work/dyld09.cdhash
 sudo mv -v work/dyld09 rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.09
-./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.11 work/dyld11
+./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.11 work/dyld11 -H work/dyld11.cdhash
 sudo mv -v work/dyld11 rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.11
-./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.13 work/dyld13
+./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.13 work/dyld13 -H work/dyld13.cdhash
 sudo mv -v work/dyld13 rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.13
 sudo chown root:wheel rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64*
 sudo chmod 755 rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64*
+
+# ---- Trust cache: cover every modified / newly-added binary -----------------
+# work/trustcache.raw was seeded from the stock iPhone 8 16.1 rootfs trust
+# cache at the top of this script. Everything new on this rootfs — the
+# flattened cryptex OS and App trees, iPad-sourced frameworks, N69-only files
+# pulled from the SE 15.8.8 rootfs, the binaries we resigned (BCMWLAN dext,
+# backboardd), and the just-patched dyld_shared_cache subcaches — gets its
+# CDHash appended here so AMFI boots with the stock trust posture. This is
+# what lets us retire the KPlooshFinder runtime patch above.
+#
+# Merge the iPad cryptex trust caches wholesale: each already carries the
+# CDHashes for every Mach-O inside that cryptex tree, so we avoid rehashing
+# thousands of untouched binaries.
+if [[ -f tmp3/Firmware/078-64804-105.dmg.trustcache ]]; then
+    ./bin/img4 -i tmp3/Firmware/078-64804-105.dmg.trustcache -o work/cryptexOS.trustcache
+    ./bin/tcrawappend work/trustcache.raw -m work/cryptexOS.trustcache
+else
+    echo "warning: iPad OS cryptex trust cache missing; cryptex Mach-O hashes will not be merged" >&2
+fi
+if [[ -f tmp3/Firmware/078-64825-107.dmg.trustcache ]]; then
+    ./bin/img4 -i tmp3/Firmware/078-64825-107.dmg.trustcache -o work/cryptexApp.trustcache
+    ./bin/tcrawappend work/trustcache.raw -m work/cryptexApp.trustcache
+else
+    echo "warning: iPad App cryptex trust cache missing; cryptex Mach-O hashes will not be merged" >&2
+fi
+
+# Collect every other code object that must be trusted. The stock trustcache
+# CLI only ingests Mach-O files, so we gather candidates first and filter by
+# magic before handing anything over.
+: > work/trust_candidates.list
+sudo find rootfs16/System/Library/PrivateFrameworks/H6ISPServices.framework -type f >> work/trust_candidates.list
+sudo find rootfs16/System/Library/Extensions/AGXMetalA9.bundle -type f >> work/trust_candidates.list
+sudo find rootfs16 -iregex '.*n69.*' -type f >> work/trust_candidates.list
+echo rootfs16/System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN >> work/trust_candidates.list
+echo rootfs16/usr/libexec/backboardd >> work/trust_candidates.list
+
+: > work/trust_macho.list
+sudo bash -c '
+while IFS= read -r f; do
+    [[ -f "$f" ]] || continue
+    magic=$(head -c 4 "$f" 2>/dev/null | od -An -tx1 | tr -d " \n")
+    case "$magic" in
+        cffaedfe|cefaedfe|cafebabe|bebafeca) printf "%s\n" "$f" ;;
+    esac
+done < work/trust_candidates.list
+' >> work/trust_macho.list
+sort -u -o work/trust_macho.list work/trust_macho.list
+
+# Chunked append — keep each invocation well under ARG_MAX on a worst-case
+# N69/N69u sweep from the SE 15 rootfs.
+if [[ -s work/trust_macho.list ]]; then
+    xargs -n 50 sudo ./bin/trustcache append -f 1 work/trustcache.raw < work/trust_macho.list
+fi
+
+# dyld subcache CDHashes (produced above via dscpatch -H).
+./bin/tcrawappend work/trustcache.raw -f 1 \
+    -H work/dyld05.cdhash \
+    -H work/dyld09.cdhash \
+    -H work/dyld11.cdhash \
+    -H work/dyld13.cdhash
+
+./bin/img4 -i work/trustcache.raw -o tmp1/Firmware/098-68807-067.dmg.trustcache -A -T trst
 # All done with the iPad stuff.
 hdiutil detach rootfs16
 hdiutil convert -format ULFO -o tmp1/098-68807-067.dmg work/template.dmg
@@ -247,8 +317,8 @@ rm -rf tmp3
 rm -rf work
 sudo plutil -replace ProductBuildVersion -string 20B82 tmp1/BuildManifest.plist
 sudo plutil -replace ProductVersion -string 16.1 tmp1/BuildManifest.plist
-sudo plutil -replace BuildIdentities.0.Manifest.KernelCache.Info.Path -string kernelcache.release.iphone8c tmp1/BuildManifest.plist
-sudo plutil -replace BuildIdentities.1.Manifest.KernelCache.Info.Path -string kernelcache.release.iphone8c tmp1/BuildManifest.plist
+#sudo plutil -replace BuildIdentities.0.Manifest.KernelCache.Info.Path -string kernelcache.release.iphone8c tmp1/BuildManifest.plist
+#sudo plutil -replace BuildIdentities.1.Manifest.KernelCache.Info.Path -string kernelcache.release.iphone8c tmp1/BuildManifest.plist
 cd tmp1 
 zip -0 -r ../iPhone_4.0_64bit_16.1_20B82_Restore.ipsw *
 cd ..

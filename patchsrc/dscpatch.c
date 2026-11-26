@@ -528,19 +528,39 @@ static void signature(int update){
  }
 }
 static void save(const char *path){size_t n=strlen(path);if(n>SIZE_MAX-16)die("path too long");char *tmp=malloc(n+16);if(!tmp)die("out of memory");snprintf(tmp,n+16,"%s.tmp.XXXXXX",path);int fd=mkstemp(tmp);if(fd<0){perror("dscpatch: temporary output");exit(1);}int err=0;size_t p=0;while(p<length){size_t z=length-p;if(z>1048576)z=1048576;ssize_t w=write(fd,b+p,z);if(w<0&&errno==EINTR)continue;if(w<=0){err=errno?errno:EIO;break;}p+=(size_t)w;}if(!err&&fsync(fd))err=errno;if(close(fd)&&!err)err=errno;if(!err&&link(tmp,path))err=errno;unlink(tmp);free(tmp);if(err){errno=err;perror("dscpatch: publish output (existing paths refused)");exit(1);}}
+/* Append the refreshed CDHash of every parsed CodeDirectory to a text file,
+ * one 20-byte truncated-SHA256 hex digest per line. The hash matches what
+ * AMFI uses for trust-cache lookup, so this feeds patchsrc/tcrawappend. */
+static void emit_cdhashes(const char *path){
+ FILE *hf=fopen(path,"a");if(!hf){perror("dscpatch: -H output");exit(1);}
+ for(size_t j=0;j<nd;j++){
+  uint32_t sz=be32(dirs[j].cd+4);unsigned char digest[32];
+  CC_SHA256(b+dirs[j].cd,(CC_LONG)sz,digest);
+  for(int k=0;k<20;k++)fprintf(hf,"%02x",digest[k]);
+  fputc('\n',hf);
+ }
+ if(fclose(hf))die("close -H output failed");
+}
 int main(int argc,char **argv){
- if(argc!=3){fprintf(stderr,"usage: %s [input cache/subcache] [output patched]\n",argv[0]);return 2;}
- FILE *f=fopen(argv[1],"rb");if(!f){perror("dscpatch: input");return 1;}struct stat st;if(fstat(fileno(f),&st)||!S_ISREG(st.st_mode)||st.st_size<512||(uintmax_t)st.st_size>SIZE_MAX)die("invalid input");length=(size_t)st.st_size;b=malloc(length);if(!b)die("out of memory");if(fread(b,1,length,f)!=length)die("read failed");if(fclose(f))die("close failed");
+ const char *input=NULL,*output=NULL,*hashout=NULL;
+ for(int i=1;i<argc;i++){
+  if(!strcmp(argv[i],"-H")&&i+1<argc){hashout=argv[++i];continue;}
+  if(!input){input=argv[i];continue;}
+  if(!output){output=argv[i];continue;}
+  fprintf(stderr,"dscpatch: unexpected argument: %s\n",argv[i]);return 2;
+ }
+ if(!input||!output){fprintf(stderr,"usage: %s [input cache/subcache] [output patched] [-H cdhashfile]\n",argv[0]);return 2;}
+ FILE *f=fopen(input,"rb");if(!f){perror("dscpatch: input");return 1;}struct stat st;if(fstat(fileno(f),&st)||!S_ISREG(st.st_mode)||st.st_size<512||(uintmax_t)st.st_size>SIZE_MAX)die("invalid input");length=(size_t)st.st_size;b=malloc(length);if(!b)die("out of memory");if(fread(b,1,length,f)!=length)die("read failed");if(fclose(f))die("close failed");
  if(memcmp(b,"dyld_v1   arm64\0",16))die("expected plain ARM64 dyld shared cache/subcache");uint32_t mo=u32(16),count=u32(20);if(!count||count>N(maps)||!fits(mo,(uint64_t)count*32))die("invalid mapping table");nm=count;
  for(size_t i=0;i<nm;i++){size_t p=mo+i*32;maps[i]=(Mapping){u64(p),u64(p+8),u64(p+16),u32(p+28)};if(!fits(maps[i].off,maps[i].size)||maps[i].va>UINT64_MAX-maps[i].size)die("invalid mapping extent");for(size_t j=0;j<i;j++)if(maps[i].size&&maps[j].size&&maps[i].off<maps[j].off+maps[j].size&&maps[j].off<maps[i].off+maps[i].size)die("overlapping mappings");}
  signature(0);Image im;unsigned targets=0;
  if(find_image("/System/Library/PrivateFrameworks/NanoRegistry.framework/NanoRegistry",&im)){nano(im);targets++;}
- if(find_image("/System/Library/PrivateFrameworks/PhotosFormats.framework/PhotosFormats",&im)){photo_proxy(im,argv[1]);photo_layers(im);targets++;}
+ if(find_image("/System/Library/PrivateFrameworks/PhotosFormats.framework/PhotosFormats",&im)){photo_proxy(im,input);photo_layers(im);targets++;}
  if(find_image("/System/Library/PrivateFrameworks/AVFCapture.framework/AVFCapture",&im)){camera(im);targets++;}
  if(find_image("/System/Library/PrivateFrameworks/Sleep.framework/Sleep",&im)){sleep_patch(im);targets++;}
  if(find_image("/usr/lib/libTelephonyUtilDynamic.dylib",&im)){radio(im);targets++;}
- if(find_image("/usr/lib/libBasebandCapabilities.dylib",&im)){rfs_location(im,argv[1]);targets++;}
+ if(find_image("/usr/lib/libBasebandCapabilities.dylib",&im)){rfs_location(im,input);targets++;}
  if(!targets||!ne)die("no supported target images in this cache/subcache; no output");
  for(size_t i=0;i<ne;i++){for(size_t j=0;j<nd;j++)if(edits[i].at>dirs[j].limit||4>dirs[j].limit-edits[i].at)die("patch outside signed code range");put32(edits[i].at,edits[i].word);}
- signature(1);save(argv[2]);free(b);printf("Wrote %s (%zu bytes, %u target(s), %zu instruction writes); SHA256 code-page hashes refreshed. Hardware testing pending.\n",argv[2],length,targets,ne);return 0;
+ signature(1);if(hashout)emit_cdhashes(hashout);save(output);free(b);printf("Wrote %s (%zu bytes, %u target(s), %zu instruction writes); SHA256 code-page hashes refreshed. Hardware testing pending.\n",output,length,targets,ne);return 0;
 }

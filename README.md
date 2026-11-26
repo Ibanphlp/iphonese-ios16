@@ -36,6 +36,7 @@ Assuming all IPSWs are present, here is the usage!
 # What works
 
 - Baseband (cellular functionality is NOT fully tested, as my SE 1 is carrier locked to AT&T)
+- Camera (thanks to [awazustamin](https://github.com/awazustamin) for [the PR!](https://github.com/pwnerblu/iphonese-ios16/pull/4))
 - Wallpaper (thanks to [awazustamin](https://github.com/awazustamin) for [the PR!](https://github.com/pwnerblu/iphonese-ios16/pull/2))
 - Flashlight
 - Bluetooth
@@ -47,7 +48,6 @@ Assuming all IPSWs are present, here is the usage!
 
 # What does not work
 
-- Camera
 - Jailbreaking
 - Other things I have not tested. They may have issues.
 

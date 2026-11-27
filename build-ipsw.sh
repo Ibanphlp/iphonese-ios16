@@ -143,6 +143,8 @@ sudo plutil -replace logicalScreenClass -string '320w-568h@2x~iphone' \
 sudo cp -v work/dext.patch rootfs16/System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN
 sudo chmod 755 rootfs16/System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN
 sudo chown root:wheel rootfs16/System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN
+# Fix emoji keyboard
+sudo ln -s /System/Library/Fonts/CoreAddition/AppleColorEmoji-160px.ttc rootfs16/System/Library/Fonts/Core/AppleColorEmoji.ttc
 # Backboardd patches
 ./bin/backboarddpatcher rootfs16/usr/libexec/backboardd work/backboardd.patch
 ./bin/ldid -e rootfs16/usr/libexec/backboardd > work/ents.plist

@@ -213,6 +213,8 @@ rm -rf tmp3/078-64825-107.dmg
 # straight into the trust cache below.
 ./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.05 work/dyld05 -H work/dyld05.cdhash
 sudo mv -v work/dyld05 rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.05
+./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.07 work/dyld07 -H work/dyld07.cdhash
+sudo mv -v work/dyld07 rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.07
 ./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.09 work/dyld09 -H work/dyld09.cdhash
 sudo mv -v work/dyld09 rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.09
 ./bin/dscpatch rootfs16/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64.11 work/dyld11 -H work/dyld11.cdhash
@@ -278,6 +280,7 @@ fi
 # dyld subcache CDHashes (produced above via dscpatch -H).
 ./bin/tcrawappend work/trustcache.raw -f 1 \
     -H work/dyld05.cdhash \
+    -H work/dyld07.cdhash \
     -H work/dyld09.cdhash \
     -H work/dyld11.cdhash \
     -H work/dyld13.cdhash

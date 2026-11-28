@@ -192,6 +192,21 @@ static size_t header_gap(Image im,size_t need){
  return start;
 }
 
+/* 20B82 +[TPSContentURLController modelQueryItem] retains the selected
+ * string in x8. Change that selection, leaving ownership and URL building alone. */
+static void tips_catalog(Image im){
+ static const unsigned char uuid[16]={0xab,0x66,0x89,0xeb,0x0a,0x9e,0x3e,0x47,0xab,0x57,0x14,0xae,0x88,0x3f,0xf6,0x83};
+ const uint64_t site=0x19b3abdac,donor=0x1d6d4d1c8; /* @"A1905" in this cache set */
+ if(memcmp(b+88,uuid,sizeof(uuid))||im.va!=0x19b3a8000)die("unsupported TipsCore cache (expected 20B82 arm64 .07)");
+ static const uint32_t expected[]={0xf100001f,0x9a800268,0x940be58b,0xaa0003f4};
+ size_t at=offset(site,sizeof(expected));
+ for(size_t i=0;i<N(expected);i++)if(u32(at+4*i)!=expected[i])die("TipsCore model query site differs");
+ uint32_t pages=(uint32_t)((donor>>12)-(site>>12));
+ edit(at,0x90000008u|((pages&3)<<29)|((pages>>2)<<5)); /* adrp x8 */
+ edit(at+4,0x91000108u|((uint32_t)(donor&4095)<<10)); /* add x8, x8 */
+ printf("TipsCore: use A1905 for the Tips catalogue on all SE variants\n");
+}
+
 static void camera(Image im){
  size_t ctx=match(im,camera_loop_sig,N(camera_loop_sig),"AVFCapture product capability loop");
  size_t rel=match(im,camera_release_sig,N(camera_release_sig),"AVFCapture release-string field");
@@ -554,6 +569,7 @@ int main(int argc,char **argv){
  if(memcmp(b,"dyld_v1   arm64\0",16))die("expected plain ARM64 dyld shared cache/subcache");uint32_t mo=u32(16),count=u32(20);if(!count||count>N(maps)||!fits(mo,(uint64_t)count*32))die("invalid mapping table");nm=count;
  for(size_t i=0;i<nm;i++){size_t p=mo+i*32;maps[i]=(Mapping){u64(p),u64(p+8),u64(p+16),u32(p+28)};if(!fits(maps[i].off,maps[i].size)||maps[i].va>UINT64_MAX-maps[i].size)die("invalid mapping extent");for(size_t j=0;j<i;j++)if(maps[i].size&&maps[j].size&&maps[i].off<maps[j].off+maps[j].size&&maps[j].off<maps[i].off+maps[i].size)die("overlapping mappings");}
  signature(0);Image im;unsigned targets=0;
+ if(find_image("/System/Library/PrivateFrameworks/TipsCore.framework/TipsCore",&im)){tips_catalog(im);targets++;}
  if(find_image("/System/Library/PrivateFrameworks/NanoRegistry.framework/NanoRegistry",&im)){nano(im);targets++;}
  if(find_image("/System/Library/PrivateFrameworks/PhotosFormats.framework/PhotosFormats",&im)){photo_proxy(im,input);photo_layers(im);targets++;}
  if(find_image("/System/Library/PrivateFrameworks/AVFCapture.framework/AVFCapture",&im)){camera(im);targets++;}
